@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <doc>
     <assembly>
-        <name>Penguin.Web.Errors.Local</name>
+        <name>Penguin.Web.Errors</name>
     </assembly>
     <members>
     </members>
