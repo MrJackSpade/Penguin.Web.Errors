@@ -7,6 +7,7 @@
     <Description>Not Available</Description>
     <AssemblyName>Penguin.Web.Errors</AssemblyName>
     <RootNamespace>Penguin.Web.Errors</RootNamespace>
+    <DocumentationFile>Penguin.Web.Errors.xml</DocumentationFile>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.2.0" />
