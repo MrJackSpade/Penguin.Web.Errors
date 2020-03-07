@@ -120,7 +120,7 @@ namespace Penguin.Web.Errors.Middleware
                 }
                 else
                 {
-                    context.Response.Redirect(BuildUrl(route, context));
+                    context.Response.Redirect(this.BuildUrl(route, context));
                 }
             }
         }

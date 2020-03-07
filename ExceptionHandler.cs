@@ -11,8 +11,8 @@ namespace Penguin.Web.Errors
 
         public ExceptionHandler(Type exceptionType, MethodInfo method)
         {
-            ExceptionType = exceptionType;
-            Method = method;
+            this.ExceptionType = exceptionType;
+            this.Method = method;
         }
     }
 }

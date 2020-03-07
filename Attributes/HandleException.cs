@@ -21,7 +21,7 @@ namespace Penguin.Web.Errors.Attributes
                     throw new Exception($"Type {t} is not an Exception type");
                 }
             }
-            ToHandle = toHandle;
+            this.ToHandle = toHandle;
         }
     }
 }
