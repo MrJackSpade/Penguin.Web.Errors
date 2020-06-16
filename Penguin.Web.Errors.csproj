@@ -12,6 +12,6 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.2.0" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Core" Version="2.2.5" />
-    <PackageReference Include="Penguin.Reflection" Version="4.0.9-T9XWH6X" />
+    <PackageReference Include="Penguin.Reflection" Version="4.0.9-T9XYC7H" />
   </ItemGroup>
 </Project>
