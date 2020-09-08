@@ -30,6 +30,11 @@ namespace Penguin.Web.Errors.Middleware
 
         public async Task Invoke(HttpContext context)
         {
+            if (context is null)
+            {
+                throw new ArgumentNullException(nameof(context));
+            }
+
             try
             {
                 await this._next(context).ConfigureAwait(false);
