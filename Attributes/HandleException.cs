@@ -11,7 +11,7 @@ namespace Penguin.Web.Errors.Attributes
         {
             if (toHandle.Length == 0)
             {
-                throw new ArgumentException(nameof(toHandle), "Must specify at least one exception type to handle");
+                throw new ArgumentException("Must specify at least one exception type to handle", nameof(toHandle));
             }
 
             foreach (Type t in toHandle)

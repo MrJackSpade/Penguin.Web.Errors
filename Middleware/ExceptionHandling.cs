@@ -95,7 +95,7 @@ namespace Penguin.Web.Errors.Middleware
                     {
                         string ControllerName = selectedHandler.DeclaringType.Name;
 
-                        if (ControllerName.EndsWith("Controller"))
+                        if (ControllerName.EndsWith("Controller", StringComparison.OrdinalIgnoreCase))
                         {
                             ControllerName = ControllerName.Replace("Controller", "");
                         }
@@ -125,12 +125,12 @@ namespace Penguin.Web.Errors.Middleware
                 }
                 else
                 {
-                    context.Response.Redirect(this.BuildUrl(route, context));
+                    context.Response.Redirect(BuildUrl(route, context));
                 }
             }
         }
 
-        private string BuildUrl(ExceptionRoute route, HttpContext context)
+        private static string BuildUrl(ExceptionRoute route, HttpContext context)
         {
             RouteData r = context.GetRouteData();
 
