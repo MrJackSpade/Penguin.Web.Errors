@@ -9,7 +9,7 @@ namespace Penguin.Web.Errors.Attributes
 
         public HandleExceptionAttribute(params Type[] toHandle)
         {
-            if (toHandle.Length == 0)
+            if (toHandle is null || toHandle.Length == 0)
             {
                 throw new ArgumentException("Must specify at least one exception type to handle", nameof(toHandle));
             }
@@ -21,7 +21,7 @@ namespace Penguin.Web.Errors.Attributes
                     throw new Exception($"Type {t} is not an Exception type");
                 }
             }
-            this.ToHandle = toHandle;
+            this.ToHandle = toHandle ?? throw new ArgumentNullException(nameof(toHandle));
         }
     }
 }
