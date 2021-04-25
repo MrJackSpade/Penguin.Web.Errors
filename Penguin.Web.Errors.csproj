@@ -3,7 +3,7 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <PackageProjectUrl>https://github.com/penguincms/Penguin.Web.Errors</PackageProjectUrl>
-    <Version>5.0.1</Version>
+    <Version>5.0.5</Version>
     <Description>Not Available</Description>
     <AssemblyName>Penguin.Web.Errors</AssemblyName>
     <RootNamespace>Penguin.Web.Errors</RootNamespace>
@@ -12,6 +12,6 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.2.0" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Core" Version="2.2.5" />
-    <PackageReference Include="Penguin.Reflection" Version="5.0.2-TADRIFB" />
+    <PackageReference Include="Penguin.Reflection" Version="5.0.4" />
   </ItemGroup>
 </Project>
