@@ -10,6 +10,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Penguin.Web.Errors.Middleware
@@ -18,14 +19,33 @@ namespace Penguin.Web.Errors.Middleware
     public class ExceptionHandling
     {
         private static readonly ConcurrentDictionary<Type, MethodInfo> AllHandlers = new ConcurrentDictionary<Type, MethodInfo>();
-        private static readonly ConcurrentDictionary<Type, ExceptionRoute> ErrorHandlers = new ConcurrentDictionary<Type, ExceptionRoute>();
-        private static bool HandlersSearched = false;
+        private static readonly Dictionary<Type, ExceptionRoute> ErrorHandlers = new Dictionary<Type, ExceptionRoute>();
+        private static readonly object ErrorHandlerLock = new object();
+
+        private static readonly bool HandlersSearched = false;
         private readonly RequestDelegate _next;
 
         //TODO: Learn what this is
         public ExceptionHandling(RequestDelegate next)
         {
             this._next = next;
+        }
+
+        static ExceptionHandling()
+        {
+            foreach (Type t in TypeFactory.GetAllTypes())
+            {
+                foreach (MethodInfo m in t.GetMethods())
+                {
+                    if (m.GetCustomAttribute<HandleExceptionAttribute>() is HandleExceptionAttribute handler)
+                    {
+                        foreach (Type e in handler.ToHandle)
+                        {
+                            _ = AllHandlers.TryAdd(e, m);
+                        }
+                    }
+                }
+            }
         }
 
         public async Task Invoke(HttpContext context)
@@ -41,93 +61,68 @@ namespace Penguin.Web.Errors.Middleware
             }
             catch (Exception ex)
             {
-                Type exceptionType = ex.GetType();
-
-                if (!ErrorHandlers.TryGetValue(exceptionType, out ExceptionRoute route))
+                try
                 {
-                    if (!HandlersSearched)
-                    {
-                        HandlersSearched = true;
+                    Type exceptionType = ex.GetType();
+                    
+                    ExceptionRoute selectedRoute = null;
 
-                        foreach (Type t in TypeFactory.GetAllTypes())
+                    Monitor.Enter(ErrorHandlerLock);
+
+                    if (!ErrorHandlers.TryGetValue(exceptionType, out selectedRoute))
+                    {
+                        Type toCheck = exceptionType;
+
+                        do
                         {
-                            foreach (MethodInfo m in t.GetMethods())
+                            if (AllHandlers.TryGetValue(toCheck, out MethodInfo m))
                             {
-                                if (m.GetCustomAttribute<HandleExceptionAttribute>() is HandleExceptionAttribute handler)
+                                string ControllerName = m.DeclaringType.Name;
+
+                                if (ControllerName.EndsWith("Controller", StringComparison.OrdinalIgnoreCase))
                                 {
-                                    foreach (Type e in handler.ToHandle)
-                                    {
-                                        AllHandlers.TryAdd(e, m);
-                                    }
+                                    ControllerName = ControllerName.Replace("Controller", "");
                                 }
+
+                                string ActionName = m.Name;
+                                string AreaName = string.Empty;
+
+                                if (m.DeclaringType.GetCustomAttribute<AreaAttribute>() is AreaAttribute attribute)
+                                {
+                                    AreaName = attribute.RouteValue;
+                                }
+
+                                selectedRoute = new ExceptionRoute()
+                                {
+                                    Action = ActionName,
+                                    Area = AreaName,
+                                    Controller = ControllerName
+                                };
+
+                                ErrorHandlers.Add(exceptionType, selectedRoute);
                             }
-                        }
+
+                            toCheck = toCheck.BaseType;
+                        } while (toCheck != null && typeof(Exception).IsAssignableFrom(toCheck));
+
+                        ErrorHandlers.Add(exceptionType, null);
                     }
 
-                    List<Type> searchTypes = new List<Type>();
-                    Type toCheck = exceptionType;
-
-                    do
+                    if (selectedRoute is null)
                     {
-                        searchTypes.Add(toCheck);
-                        toCheck = toCheck.BaseType;
-                    } while (toCheck != null && typeof(Exception).IsAssignableFrom(toCheck));
-
-                    List<ExceptionHandler> potentialHandlers = new List<ExceptionHandler>();
-
-                    foreach (Type possibleHandlerType in searchTypes)
-                    {
-                        if (AllHandlers.TryGetValue(possibleHandlerType, out MethodInfo m))
-                        {
-                            potentialHandlers.Add(new ExceptionHandler(possibleHandlerType, m));
-                        }
-                    }
-
-                    Type mostDerivedHandler = TypeFactory.GetMostDerivedType(potentialHandlers.Select(p => p.ExceptionType).ToList(), typeof(Exception));
-
-                    MethodInfo selectedHandler = potentialHandlers.FirstOrDefault(p => p.ExceptionType == mostDerivedHandler)?.Method;
-
-                    if (selectedHandler is null)
-                    {
-                        ErrorHandlers.TryAdd(exceptionType, null);
+                        throw;
                     }
                     else
                     {
-                        string ControllerName = selectedHandler.DeclaringType.Name;
-
-                        if (ControllerName.EndsWith("Controller", StringComparison.OrdinalIgnoreCase))
-                        {
-                            ControllerName = ControllerName.Replace("Controller", "");
-                        }
-
-                        string ActionName = selectedHandler.Name;
-                        string AreaName = string.Empty;
-
-                        if (selectedHandler.DeclaringType.GetCustomAttribute<AreaAttribute>() is AreaAttribute attribute)
-                        {
-                            AreaName = attribute.RouteValue;
-                        }
-
-                        route = new ExceptionRoute()
-                        {
-                            Action = ActionName,
-                            Area = AreaName,
-                            Controller = ControllerName
-                        };
-
-                        ErrorHandlers.TryAdd(exceptionType, route);
+                        context.Response.Redirect(BuildUrl(selectedRoute, context));
                     }
                 }
-
-                if (route is null)
+                finally
                 {
-                    throw;
-                }
-                else
-                {
-                    context.Response.Redirect(BuildUrl(route, context));
+                    Monitor.Exit(ErrorHandlerLock);
                 }
             }
+
         }
 
         private static string BuildUrl(ExceptionRoute route, HttpContext context)
