@@ -100,6 +100,10 @@ namespace Penguin.Web.Errors.Middleware
                                 };
 
                                 ErrorHandlers.Add(exceptionType, selectedRoute);
+
+                                context.Response.Redirect(BuildUrl(selectedRoute, context));
+
+                                return;
                             }
 
                             toCheck = toCheck.BaseType;
@@ -108,14 +112,14 @@ namespace Penguin.Web.Errors.Middleware
                         ErrorHandlers.Add(exceptionType, null);
                     }
 
-                    if (selectedRoute is null)
-                    {
-                        throw;
-                    }
-                    else
+                    if(selectedRoute != null)
                     {
                         context.Response.Redirect(BuildUrl(selectedRoute, context));
+
+                        return;
                     }
+
+                    throw;
                 }
                 finally
                 {
