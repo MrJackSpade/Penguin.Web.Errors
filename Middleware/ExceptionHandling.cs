@@ -8,7 +8,6 @@ using Penguin.Web.Errors.Attributes;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
@@ -63,13 +62,40 @@ namespace Penguin.Web.Errors.Middleware
             {
                 try
                 {
+
+                    /* Unmerged change from project 'Penguin.Web.Errors.Local (net5.0)'
+                    Before:
+                                        Type exceptionType = ex.GetType();
+
+                                        ExceptionRoute selectedRoute = null;
+
+                                        Monitor.Enter(ErrorHandlerLock);
+                    After:
+                                        Type exceptionType = ex.GetType();
+
+
+                                        Monitor.Enter(ErrorHandlerLock);
+                    */
+
+                    /* Unmerged change from project 'Penguin.Web.Errors.Local (netstandard2.1)'
+                    Before:
+                                        Type exceptionType = ex.GetType();
+
+                                        ExceptionRoute selectedRoute = null;
+
+                                        Monitor.Enter(ErrorHandlerLock);
+                    After:
+                                        Type exceptionType = ex.GetType();
+
+
+                                        Monitor.Enter(ErrorHandlerLock);
+                    */
                     Type exceptionType = ex.GetType();
-                    
-                    ExceptionRoute selectedRoute = null;
+
 
                     Monitor.Enter(ErrorHandlerLock);
 
-                    if (!ErrorHandlers.TryGetValue(exceptionType, out selectedRoute))
+                    if (!ErrorHandlers.TryGetValue(exceptionType, out ExceptionRoute selectedRoute))
                     {
                         Type toCheck = exceptionType;
 
@@ -112,7 +138,7 @@ namespace Penguin.Web.Errors.Middleware
                         ErrorHandlers.Add(exceptionType, null);
                     }
 
-                    if(selectedRoute != null)
+                    if (selectedRoute != null)
                     {
                         context.Response.Redirect(BuildUrl(selectedRoute, context));
 
