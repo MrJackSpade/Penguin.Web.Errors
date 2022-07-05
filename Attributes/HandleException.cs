@@ -6,7 +6,6 @@ namespace Penguin.Web.Errors.Attributes
     public class HandleExceptionAttribute : Attribute
     {
         public Type[] ToHandle { get; set; }
-
         public HandleExceptionAttribute(params Type[] toHandle)
         {
             if (toHandle is null || toHandle.Length == 0)

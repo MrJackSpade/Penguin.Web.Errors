@@ -9,6 +9,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Reflection;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -63,35 +64,8 @@ namespace Penguin.Web.Errors.Middleware
                 try
                 {
 
-                    /* Unmerged change from project 'Penguin.Web.Errors.Local (net5.0)'
-                    Before:
-                                        Type exceptionType = ex.GetType();
 
-                                        ExceptionRoute selectedRoute = null;
-
-                                        Monitor.Enter(ErrorHandlerLock);
-                    After:
-                                        Type exceptionType = ex.GetType();
-
-
-                                        Monitor.Enter(ErrorHandlerLock);
-                    */
-
-                    /* Unmerged change from project 'Penguin.Web.Errors.Local (netstandard2.1)'
-                    Before:
-                                        Type exceptionType = ex.GetType();
-
-                                        ExceptionRoute selectedRoute = null;
-
-                                        Monitor.Enter(ErrorHandlerLock);
-                    After:
-                                        Type exceptionType = ex.GetType();
-
-
-                                        Monitor.Enter(ErrorHandlerLock);
-                    */
                     Type exceptionType = ex.GetType();
-
 
                     Monitor.Enter(ErrorHandlerLock);
 
@@ -118,11 +92,19 @@ namespace Penguin.Web.Errors.Middleware
                                     AreaName = attribute.RouteValue;
                                 }
 
+                                string HttpGet = null;
+
+                                if(m.GetCustomAttribute<HttpGetAttribute>() is HttpGetAttribute hga)
+                                {
+                                    HttpGet = hga.Template;
+                                }
+
                                 selectedRoute = new ExceptionRoute()
                                 {
                                     Action = ActionName,
                                     Area = AreaName,
-                                    Controller = ControllerName
+                                    Controller = ControllerName,
+                                    Template = HttpGet
                                 };
 
                                 ErrorHandlers.Add(exceptionType, selectedRoute);
@@ -140,7 +122,15 @@ namespace Penguin.Web.Errors.Middleware
 
                     if (selectedRoute != null)
                     {
-                        context.Response.Redirect(BuildUrl(selectedRoute, context));
+                        var redirectLocation = BuildUrl(selectedRoute, context);
+
+                        if (redirectLocation != null)
+                        {
+                            context.Response.Redirect(redirectLocation);
+                        } else
+                        {
+                            throw new RouteCreationException($"Unable to resolve route for exception {exceptionType}");
+                        }
 
                         return;
                     }
@@ -163,7 +153,28 @@ namespace Penguin.Web.Errors.Middleware
 
             UrlHelper helper = new UrlHelper(a);
 
-            return helper.Action(route.Action, route.Controller, new { area = route.Area, Url = context.Request.Path });
+            string actionRoute = helper.Action(route.Action, route.Controller, new { area = route.Area, Url = context.Request.Path });
+
+            if(actionRoute != null)
+            {
+                return actionRoute;
+            }
+
+            if (!string.IsNullOrWhiteSpace(route.Template))
+            {
+                return route.Template;
+            }
+
+            StringBuilder sb = new StringBuilder();
+
+            if(!string.IsNullOrWhiteSpace(route.Area))
+            {
+                sb.Append($"/{route.Area}");
+            }
+
+            sb.Append($"/{route.Controller}/{route.Action}");
+
+            return sb.ToString();
         }
     }
 }
