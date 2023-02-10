@@ -18,17 +18,15 @@ namespace Penguin.Web.Errors.Middleware
     //https://exceptionnotfound.net/using-middleware-to-log-requests-and-responses-in-asp-net-core/
     public class ExceptionHandling
     {
-        private static readonly ConcurrentDictionary<Type, MethodInfo> AllHandlers = new ConcurrentDictionary<Type, MethodInfo>();
-        private static readonly Dictionary<Type, ExceptionRoute> ErrorHandlers = new Dictionary<Type, ExceptionRoute>();
-        private static readonly object ErrorHandlerLock = new object();
-
-        private static readonly bool HandlersSearched = false;
+        private static readonly ConcurrentDictionary<Type, MethodInfo> AllHandlers = new();
+        private static readonly Dictionary<Type, ExceptionRoute> ErrorHandlers = new();
+        private static readonly object ErrorHandlerLock = new();
         private readonly RequestDelegate _next;
 
         //TODO: Learn what this is
         public ExceptionHandling(RequestDelegate next)
         {
-            this._next = next;
+            _next = next;
         }
 
         static ExceptionHandling()
@@ -57,14 +55,12 @@ namespace Penguin.Web.Errors.Middleware
 
             try
             {
-                await this._next(context).ConfigureAwait(false);
+                await _next(context).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
                 try
                 {
-
-
                     Type exceptionType = ex.GetType();
 
                     Monitor.Enter(ErrorHandlerLock);
@@ -94,7 +90,7 @@ namespace Penguin.Web.Errors.Middleware
 
                                 string HttpGet = null;
 
-                                if(m.GetCustomAttribute<HttpGetAttribute>() is HttpGetAttribute hga)
+                                if (m.GetCustomAttribute<HttpGetAttribute>() is HttpGetAttribute hga)
                                 {
                                     HttpGet = hga.Template;
                                 }
@@ -122,12 +118,13 @@ namespace Penguin.Web.Errors.Middleware
 
                     if (selectedRoute != null)
                     {
-                        var redirectLocation = BuildUrl(selectedRoute, context);
+                        string redirectLocation = BuildUrl(selectedRoute, context);
 
                         if (redirectLocation != null)
                         {
                             context.Response.Redirect(redirectLocation);
-                        } else
+                        }
+                        else
                         {
                             throw new RouteCreationException($"Unable to resolve route for exception {exceptionType}");
                         }
@@ -142,20 +139,19 @@ namespace Penguin.Web.Errors.Middleware
                     Monitor.Exit(ErrorHandlerLock);
                 }
             }
-
         }
 
         private static string BuildUrl(ExceptionRoute route, HttpContext context)
         {
             RouteData r = context.GetRouteData();
 
-            ActionContext a = new ActionContext(context, r, new ActionDescriptor());
+            ActionContext a = new(context, r, new ActionDescriptor());
 
-            UrlHelper helper = new UrlHelper(a);
+            UrlHelper helper = new(a);
 
             string actionRoute = helper.Action(route.Action, route.Controller, new { area = route.Area, Url = context.Request.Path });
 
-            if(actionRoute != null)
+            if (actionRoute != null)
             {
                 return actionRoute;
             }
@@ -165,14 +161,14 @@ namespace Penguin.Web.Errors.Middleware
                 return route.Template;
             }
 
-            StringBuilder sb = new StringBuilder();
+            StringBuilder sb = new();
 
-            if(!string.IsNullOrWhiteSpace(route.Area))
+            if (!string.IsNullOrWhiteSpace(route.Area))
             {
-                sb.Append($"/{route.Area}");
+                _ = sb.Append($"/{route.Area}");
             }
 
-            sb.Append($"/{route.Controller}/{route.Action}");
+            _ = sb.Append($"/{route.Controller}/{route.Action}");
 
             return sb.ToString();
         }

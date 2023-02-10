@@ -3,9 +3,10 @@
 namespace Penguin.Web.Errors.Attributes
 {
     [AttributeUsage(AttributeTargets.Method, AllowMultiple = false, Inherited = false)]
-    public class HandleExceptionAttribute : Attribute
+    public sealed class HandleExceptionAttribute : Attribute
     {
-        public Type[] ToHandle { get; set; }
+        public Type[] ToHandle { get; internal set; }
+
         public HandleExceptionAttribute(params Type[] toHandle)
         {
             if (toHandle is null || toHandle.Length == 0)
@@ -20,7 +21,7 @@ namespace Penguin.Web.Errors.Attributes
                     throw new Exception($"Type {t} is not an Exception type");
                 }
             }
-            this.ToHandle = toHandle ?? throw new ArgumentNullException(nameof(toHandle));
+            ToHandle = toHandle ?? throw new ArgumentNullException(nameof(toHandle));
         }
     }
 }
