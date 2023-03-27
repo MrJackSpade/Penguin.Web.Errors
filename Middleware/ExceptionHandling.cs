@@ -32,7 +32,7 @@ namespace Penguin.Web.Errors.Middleware
 
         static ExceptionHandling()
         {
-            foreach (Type t in TypeFactory.GetAllTypes())
+            foreach (Type t in TypeFactory.Default.GetAllTypes(true))
             {
                 foreach (MethodInfo m in t.GetMethods())
                 {
